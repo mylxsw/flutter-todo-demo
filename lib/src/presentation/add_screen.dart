@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:todo/src/logic/cubit/todo_cubit.dart';
+
+import '../data/model/todo.dart';
 
 class AddScreen extends StatefulWidget {
   const AddScreen({super.key});
@@ -64,6 +68,21 @@ class _AddScreenState extends State<AddScreen> {
                   }
 
                   // TODO 新增逻辑
+                  context.read<TodoCubit>().addTodo(
+                        Todo(
+                          title: _titleController.text,
+                          description: _descriptionController.text,
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          createdAt: DateTime.now(),
+                        ),
+                      );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('新增成功'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 },
                 style: ButtonStyle(
                   minimumSize: MaterialStateProperty.all(

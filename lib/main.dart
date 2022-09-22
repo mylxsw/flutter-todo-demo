@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo/src/presentation/add_screen.dart';
 import 'src/app.dart';
 import 'src/logic/cubit/todo_cubit.dart';
 
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(create: (_) => TodoCubit()),
+        BlocProvider<TodoCubit>(create: (_) => TodoCubit()),
       ],
       child: MaterialApp(
         title: 'TODO',

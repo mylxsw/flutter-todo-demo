@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:todo/src/data/model/todo.dart';
 import 'package:todo/src/logic/cubit/todo_cubit.dart';
 import 'package:todo/src/presentation/add_screen.dart';
 
@@ -16,7 +17,7 @@ class _AppScreenState extends State<AppScreen> {
   void initState() {
     super.initState();
 
-    BlocProvider.of<TodoCubit>(context).getTodoList();
+    context.read<TodoCubit>().getTodoList();
   }
 
   @override
@@ -31,6 +32,7 @@ class _AppScreenState extends State<AppScreen> {
             return ListView.builder(
               itemCount: state.todos.length,
               itemBuilder: (context, index) {
+                var todo = state.todos[index];
                 return Slidable(
                   groupTag: "slidable items",
                   endActionPane: ActionPane(
@@ -43,8 +45,7 @@ class _AppScreenState extends State<AppScreen> {
                       ),
                       SlidableAction(
                         onPressed: (context) {
-                          BlocProvider.of<TodoCubit>(context)
-                              .deleteTodo(state.todos[index].id);
+                          context.read<TodoCubit>().deleteTodo(todo.id);
                         },
                         label: "删除",
                         backgroundColor: Colors.red,
@@ -55,9 +56,18 @@ class _AppScreenState extends State<AppScreen> {
                     motion: const DrawerMotion(),
                     children: [
                       SlidableAction(
-                        onPressed: (context) {},
-                        label: "完成",
-                        backgroundColor: Colors.blue,
+                        onPressed: (context) {
+                          if (todo.status == TodoStatus.completed) {
+                            context.read<TodoCubit>().redoTodo(todo.id);
+                          } else {
+                            context.read<TodoCubit>().finishTodo(todo.id);
+                          }
+                        },
+                        label:
+                            todo.status == TodoStatus.completed ? "待办" : "完成",
+                        backgroundColor: todo.status == TodoStatus.completed
+                            ? Colors.orange
+                            : Colors.blue,
                       ),
                     ],
                   ),
@@ -66,28 +76,39 @@ class _AppScreenState extends State<AppScreen> {
                       padding: const EdgeInsets.all(8),
                       child: Row(
                         children: [
-                          const Icon(Icons.abc),
+                          Icon(todo.status == TodoStatus.completed
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank),
                           const SizedBox(width: 16),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                state.todos[index].title,
+                                todo.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: Color.fromARGB(255, 60, 60, 60),
+                                  color: const Color.fromARGB(255, 60, 60, 60),
+                                  decoration:
+                                      todo.status == TodoStatus.completed
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
                                 ),
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                state.todos[index].description,
+                                todo.description,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 15,
-                                  color: Color.fromARGB(255, 103, 103, 103),
+                                  color:
+                                      const Color.fromARGB(255, 103, 103, 103),
+                                  decoration:
+                                      todo.status == TodoStatus.completed
+                                          ? TextDecoration.lineThrough
+                                          : TextDecoration.none,
                                 ),
                               ),
                             ],
@@ -118,7 +139,13 @@ class _AppScreenState extends State<AppScreen> {
   }
 
   void _onAddButtonTapped() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => const AddScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BlocProvider.value(
+          value: context.read<TodoCubit>(),
+          child: const AddScreen(),
+        ),
+      ),
+    );
   }
 }

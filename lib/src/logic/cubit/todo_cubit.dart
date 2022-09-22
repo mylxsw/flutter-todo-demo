@@ -1,5 +1,5 @@
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/model/todo.dart';
 
 part 'todo_state.dart';
@@ -31,11 +31,30 @@ class TodoCubit extends Cubit<TodoState> {
   );
 
   void deleteTodo(String id) {
+    emit(TodoLoading());
     _todos.removeWhere((todo) => todo.id == id);
     emit(TodoLoaded(_todos));
   }
 
+  void redoTodo(String id) {
+    emit(TodoLoading());
+    _todos.firstWhere((todo) => todo.id == id).status = TodoStatus.active;
+    emit(TodoLoaded(_todos));
+  }
+
+  void finishTodo(String id) {
+    emit(TodoLoading());
+    _todos.firstWhere((todo) => todo.id == id).status = TodoStatus.completed;
+    emit(TodoLoaded(_todos));
+  }
+
   void getTodoList() {
+    emit(TodoLoaded(_todos));
+  }
+
+  void addTodo(Todo todo) {
+    emit(TodoLoading());
+    _todos.add(todo);
     emit(TodoLoaded(_todos));
   }
 }
