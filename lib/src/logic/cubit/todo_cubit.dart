@@ -10,19 +10,16 @@ class TodoCubit extends Cubit<TodoState> {
   TodoCubit(this.todoRepository) : super(TodoInitial());
 
   Future<void> deleteTodo(int id) async {
-    emit(TodoLoading());
     await todoRepository.deleteTodoById(id);
     emit(TodoNeedUpdate());
   }
 
   Future<void> resumeTodo(int id) async {
-    emit(TodoLoading());
     await todoRepository.resumeTodoById(id);
     emit(TodoNeedUpdate());
   }
 
   Future<void> finishTodo(int id) async {
-    emit(TodoLoading());
     await todoRepository.finishTodoById(id);
     emit(TodoNeedUpdate());
   }
@@ -31,9 +28,9 @@ class TodoCubit extends Cubit<TodoState> {
     emit(TodoLoaded(await todoRepository.getTodoList()));
   }
 
-  Future<void> addTodo(Todo todo) async {
-    emit(TodoLoading());
-    await todoRepository.insertTodo(todo);
+  Future<int> addTodo(Todo todo) async {
+    var id = await todoRepository.insertTodo(todo);
     emit(TodoNeedUpdate());
+    return id;
   }
 }

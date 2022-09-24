@@ -1,9 +1,11 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:todo/src/data/model/todo.dart';
+import 'package:todo/src/logic/cubit/catalog_cubit.dart';
 import 'package:todo/src/logic/cubit/todo_cubit.dart';
-import 'package:todo/src/presentation/add_screen.dart';
+import 'package:todo/src/presentation/add_todo_screen.dart';
+import 'package:todo/src/presentation/message_box_screen.dart';
+import 'package:todo/src/presentation/setting_screen.dart';
 
 class AppScreen extends StatefulWidget {
   const AppScreen({super.key});
@@ -13,161 +15,125 @@ class AppScreen extends StatefulWidget {
 }
 
 class _AppScreenState extends State<AppScreen> {
-  @override
-  void initState() {
-    super.initState();
+  final _pages = {
+    "messageBox": <Widget>[const Text('收件箱'), const MessageBoxScreen()],
+    "setting": <Widget>[const Text('设置'), const SettingScreen()],
+  };
 
-    context.read<TodoCubit>().getTodoList();
-  }
+  String _currentPage = "messageBox";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('TODO'),
+        title: _pages[_currentPage]?[0],
       ),
-      body: BlocConsumer<TodoCubit, TodoState>(
-        listener: (context, state) {
-          if (state is TodoNeedUpdate) {
-            context.read<TodoCubit>().getTodoList();
-          }
-        },
-        builder: (context, state) {
-          if (state is TodoLoaded) {
-            return RefreshIndicator(
-              color: Colors.white,
-              backgroundColor: Colors.blue,
-              strokeWidth: 4.0,
-              onRefresh: () {
-                return context.read<TodoCubit>().getTodoList();
-              },
-              child: ListView.builder(
-                physics: const AlwaysScrollableScrollPhysics(),
-                itemCount: state.todos.length,
-                itemBuilder: (context, index) {
-                  var todo = state.todos[index];
-                  return Container(
-                    margin: const EdgeInsets.all(8),
-                    child: Slidable(
-                      groupTag: "slidable items",
-                      endActionPane: ActionPane(
-                        motion: const ScrollMotion(),
-                        children: [
-                          SlidableAction(
-                            onPressed: (context) {},
-                            label: "编辑",
-                            backgroundColor: Colors.green,
-                            icon: Icons.edit,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          const SizedBox(width: 10),
-                          SlidableAction(
-                            onPressed: (context) {
-                              context.read<TodoCubit>().deleteTodo(todo.id);
-                            },
-                            label: "删除",
-                            backgroundColor: Colors.red,
-                            icon: Icons.delete,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          const SizedBox(width: 10),
-                        ],
-                      ),
-                      startActionPane: ActionPane(
-                        motion: const DrawerMotion(),
-                        children: [
-                          SlidableAction(
-                            onPressed: (context) {
-                              if (todo.status == TodoStatus.completed) {
-                                context.read<TodoCubit>().resumeTodo(todo.id);
-                              } else {
-                                context.read<TodoCubit>().finishTodo(todo.id);
-                              }
-                            },
-                            label: todo.status == TodoStatus.completed
-                                ? "待办"
-                                : "完成",
-                            icon: todo.status == TodoStatus.completed
-                                ? Icons.restore
-                                : Icons.check,
-                            backgroundColor: todo.status == TodoStatus.completed
-                                ? Colors.orange
-                                : Colors.blue,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        title: Container(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            children: [
-                              todo.status == TodoStatus.completed
-                                  ? const Icon(
-                                      Icons.done,
-                                      color: Colors.green,
-                                    )
-                                  : const Icon(
-                                      Icons.query_builder,
-                                    ),
-                              const SizedBox(width: 16),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    todo.title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color:
-                                          const Color.fromARGB(255, 60, 60, 60),
-                                      decoration:
-                                          todo.status == TodoStatus.completed
-                                              ? TextDecoration.lineThrough
-                                              : TextDecoration.none,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    todo.description,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: const Color.fromARGB(
-                                          255, 103, 103, 103),
-                                      decoration:
-                                          todo.status == TodoStatus.completed
-                                              ? TextDecoration.lineThrough
-                                              : TextDecoration.none,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          } else if (state is TodoLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          } else {
-            return const Center(
-              child: Text('加载失败'),
-            );
-          }
-        },
-      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: _onAddButtonTapped,
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: buildBottomAppBar(),
+      drawer: buildDrawer(),
+      body: _pages[_currentPage]?[1],
+    );
+  }
+
+  void _onBottomMenuItemTapped(String name) {
+    setState(() {
+      _currentPage = name;
+    });
+  }
+
+  BottomAppBar buildBottomAppBar() {
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          IconButton(
+              icon: const Icon(Icons.today),
+              onPressed: () {
+                _onBottomMenuItemTapped("messageBox");
+              }),
+          const SizedBox(),
+          IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                _onBottomMenuItemTapped("setting");
+              }),
+        ],
+      ),
+    );
+  }
+
+  Drawer buildDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Colors.blue),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("TODO",
+                    style: TextStyle(color: Colors.white, fontSize: 24)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl:
+                          "http://t13.baidu.com/it/u=2296451345,460589639&fm=224&app=112&f=JPEG?w=500&h=500",
+                      imageBuilder: (context, imageProvider) => Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(100),
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      placeholder: (context, url) =>
+                          const CircularProgressIndicator(),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
+                    ),
+                    const SizedBox(width: 20),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SizedBox(width: 10),
+                        Text("次奥o(*////▽////*)q",
+                            style: TextStyle(color: Colors.white)),
+                        SizedBox(height: 10),
+                        Text("ciaoxiuxiu@google.com",
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text("站内信"),
+              onTap: () {}),
+          ListTile(
+            leading: const Icon(Icons.account_circle),
+            title: const Text("个人中心"),
+            onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.exit_to_app),
+            title: const Text("退出"),
+            onTap: () {},
+          )
+        ],
       ),
     );
   }
@@ -175,10 +141,10 @@ class _AppScreenState extends State<AppScreen> {
   void _onAddButtonTapped() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => BlocProvider.value(
-          value: context.read<TodoCubit>(),
-          child: const AddScreen(),
-        ),
+        builder: (context) => MultiBlocProvider(providers: [
+          BlocProvider.value(value: context.read<TodoCubit>()),
+          BlocProvider.value(value: context.read<CatalogCubit>()),
+        ], child: const AddScreen()),
       ),
     );
   }
