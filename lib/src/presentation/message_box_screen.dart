@@ -43,9 +43,8 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
               itemCount: state.todos.length,
               itemBuilder: (context, index) {
                 var todo = state.todos[index];
-                print(todo.toMap());
                 return Container(
-                  margin: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
                   child: Slidable(
                     groupTag: "slidable items",
                     endActionPane: ActionPane(
@@ -56,19 +55,50 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                           label: "编辑",
                           backgroundColor: Colors.green,
                           icon: Icons.edit,
-                          borderRadius: BorderRadius.circular(10),
+                          // borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(width: 10),
+                        // const SizedBox(width: 10),
                         SlidableAction(
                           onPressed: (context) {
-                            context.read<TodoCubit>().deleteTodo(todo.id);
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: const Text("提示"),
+                                    content: const Text("确定删除吗？"),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text("取消"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          context
+                                              .read<TodoCubit>()
+                                              .deleteTodo(todo.id)
+                                              .then((value) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                  content: Text("删除成功")),
+                                            );
+                                          });
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text("确定"),
+                                      ),
+                                    ],
+                                  );
+                                });
                           },
                           label: "删除",
                           backgroundColor: Colors.red,
                           icon: Icons.delete,
-                          borderRadius: BorderRadius.circular(10),
+                          // borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(width: 10),
+                        // const SizedBox(width: 10),
                       ],
                     ),
                     startActionPane: ActionPane(
@@ -90,13 +120,13 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                           backgroundColor: todo.status == TodoStatus.completed
                               ? Colors.orange
                               : Colors.blue,
-                          borderRadius: BorderRadius.circular(10),
+                          // borderRadius: BorderRadius.circular(10),
                         ),
                       ],
                     ),
                     child: ListTile(
                       title: Container(
-                        padding: const EdgeInsets.all(8),
+                        // padding: const EdgeInsets.all(8),
                         child: Row(
                           children: [
                             todo.status == TodoStatus.completed
@@ -126,32 +156,52 @@ class _MessageBoxScreenState extends State<MessageBoxScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 5),
-                                Text(
-                                  todo.description,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: const Color.fromARGB(
-                                        255, 103, 103, 103),
-                                    decoration:
-                                        todo.status == TodoStatus.completed
-                                            ? TextDecoration.lineThrough
-                                            : TextDecoration.none,
+                                if (todo.description.isNotEmpty)
+                                  Text(
+                                    todo.description,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: const Color.fromARGB(
+                                          255, 103, 103, 103),
+                                      decoration:
+                                          todo.status == TodoStatus.completed
+                                              ? TextDecoration.lineThrough
+                                              : TextDecoration.none,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 5),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(Jiffy(todo.updatedAt).fromNow(),
-                                        textScaleFactor: 0.8),
-                                    const SizedBox(width: 20),
-                                    todo.catalog == null
-                                        ? const Text('收件箱')
-                                        : Text(todo.catalog!.title),
-                                  ],
+                                if (todo.description.isNotEmpty)
+                                  const SizedBox(height: 5),
+                                SizedBox(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(
+                                        width: 80,
+                                        child: Text(
+                                          todo.catalog == null
+                                              ? '收件箱'
+                                              : todo.catalog!.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Color.fromARGB(
+                                                255, 162, 162, 162),
+                                          ),
+                                          textScaleFactor: 0.8,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 100,
+                                        child: Text(
+                                            Jiffy(todo.updatedAt).fromNow(),
+                                            overflow: TextOverflow.ellipsis,
+                                            textScaleFactor: 0.8),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             )
