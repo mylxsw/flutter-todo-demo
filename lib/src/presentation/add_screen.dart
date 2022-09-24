@@ -72,8 +72,6 @@ class _AddScreenState extends State<AddScreen> {
                         Todo(
                           title: _titleController.text,
                           description: _descriptionController.text,
-                          id: DateTime.now().millisecondsSinceEpoch.toString(),
-                          createdAt: DateTime.now(),
                         ),
                       );
 

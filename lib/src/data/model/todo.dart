@@ -1,17 +1,30 @@
 enum TodoStatus { active, completed }
 
 class Todo {
-  String id;
+  int id;
   String title;
   String description;
-  TodoStatus status = TodoStatus.active;
-  DateTime createdAt;
+  TodoStatus status;
+  DateTime? createdAt;
   DateTime? updatedAt;
 
   Todo({
-    required this.id,
+    this.id = 0,
     required this.title,
     required this.description,
-    required this.createdAt,
+    this.createdAt,
+    this.updatedAt,
+    this.status = TodoStatus.active,
   });
+
+  Map<String, Object?> toMap() {
+    return {
+      'id': id > 0 ? id : null,
+      'title': title,
+      'description': description,
+      'status': status.name,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+    };
+  }
 }
